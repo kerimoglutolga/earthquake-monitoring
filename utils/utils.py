@@ -5,6 +5,8 @@ import seisbench
 import seisbench.data as sbd
 
 def load_dataset_from_disk(metadata_path, data_path, frac=0.01, train_split=0.8, test_split=0.2):
+    """Currently only supports STEAD dataset."""
+
     assert train_split + test_split == 1, "Train and test split should sum up to 1"
     
     # 1. Load metadata
