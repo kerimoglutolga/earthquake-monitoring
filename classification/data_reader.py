@@ -114,6 +114,39 @@ def normalize_batch(data, window=6000):
 
     return normalized_data
 
+
+def random_shift(sample, itp, its, shift_range=None):
+    # Define helper functions
+    flattern = lambda x: np.array([i for trace in x for i in trace], dtype=float)
+    shift_pick = lambda x, shift: [[i - shift for i in trace] for trace in x]
+
+    # Flatten the pick times
+    itp_flat = flattern(itp)
+    its_flat = flattern(its)
+    
+    hi = np.round(np.median(itp_flat[~np.isnan(itp_flat)])).astype(int)
+    lo = -(sample.shape[1] - np.round(np.median(its_flat[~np.isnan(its_flat)])).astype(int))
+    if shift_range is None:
+        shift = np.random.randint(low=lo, high=hi + 1)
+    else:
+        shift = np.random.randint(low=max(lo, shift_range[0]), high=min(hi + 1, shift_range[1]))
+
+    shifted_sample = np.zeros_like(sample)
+    if shift > 0:
+        shifted_sample[:, :-shift] = sample[:, shift:]
+    elif shift < 0:
+        shifted_sample[:, -shift:] = sample[:, :shift]
+    else:
+        shifted_sample = sample
+
+    return shifted_sample, shift_pick(itp, shift), shift_pick(its, shift), shift
+
+# Example usage
+# sample = np.random.randn(3, 6000)
+# itp, its = [...], [...]  # Define pick times
+# shifted_sample, shifted_itp, shifted_its, shift = random_shift(sample, itp, its, ...)
+
+
     def stack_events(self, sample_old, itp_old, its_old, shift_range=None, mask_old=None):
         i = np.random.randint(self.num_data)
         base_name = self.data_list[i]
