@@ -26,9 +26,9 @@ class Picker:
         train_dataset, valid_dataset, test_dataset = random_split(concatenated_dataset, [train_size, valid_size, test_size])
 
         # Create separate DataLoaders
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-        valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
+        valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
 
         self.train_loader = train_loader
         self.valid_loader = valid_loader
@@ -40,7 +40,7 @@ class Picker:
     def trainModel(self, num_epochs: int):
 
         loss_fn = nn.MSELoss()
-        optimizer = Adam(self.model.parameters(), lr=0.001)
+        optimizer = Adam(self.model.parameters(), lr=0.01)
 
         avg_losses_train = [inf]
         avg_losses_test = [inf]
@@ -51,8 +51,6 @@ class Picker:
             
             self.model.train()
 
-            c = 0
-
             avg_loss_train = 0
             for i, (waves, labels, _) in enumerate(tqdm(self.train_loader)):
                 outputs = self.model(waves.reshape(waves.size(0),1,-1))
@@ -60,11 +58,10 @@ class Picker:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                avg_loss_train += loss.item()/1000 #/len(self.train_loader)
-                mse_losses.append(mse_losses)
+                avg_loss_train += loss.item()/200 #/len(self.train_loader)
+                mse_losses.append(loss.item())
 
-                c+= 1
-                if c > 1000:
+                if i > 200:
                     break
 
             avg_losses_train.append(avg_loss_train)
@@ -76,8 +73,8 @@ class Picker:
             for i, (waves, labels, _) in enumerate(tqdm(self.test_loader)):
                 outputs = self.model(waves.reshape(waves.size(0),1,-1))
                 loss = loss_fn(outputs, labels.to(torch.float32))
-                avg_loss_test += loss.item()/200 #/len(self.test_loader)
-                if i > 200:
+                avg_loss_test += loss.item()/100 #/len(self.test_loader)
+                if i > 100:
                     break
 
             if (avg_loss_test < min(avg_losses_test)):
