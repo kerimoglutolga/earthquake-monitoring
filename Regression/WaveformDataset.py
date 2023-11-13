@@ -23,7 +23,7 @@ class WaveformDataset(Dataset):
             wave = np.array(dataset, dtype=np.float32)[:,2]
 
             if self.transform:
-                wave = self.butterworthFilter(wave)
+                #wave = self.butterworthFilter(wave)
                 wave = self.zeroOneScaling(wave)
 
             wave_tensor = torch.from_numpy(wave.copy()).reshape(1,-1).to(torch.float32)  # Shape becomes (1, 6000)
@@ -65,7 +65,7 @@ class WaveformDataset(Dataset):
         return labels, wave_tensor
 
     def zeroOneScaling(self, data: np.array) -> np.array:
-        return (data - data.min()) / (data.max() - data.min())
+        return (data - data.min()) / (data.max() - data.min() + 1e-8)
     
     def butterworthFilter(self, data: np.array, lowcut: int = 1, highcut: int = 17, fs: int =100)\
         -> np.array:
