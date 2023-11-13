@@ -3,8 +3,8 @@ import numpy as np
 import h5py
 import torch
 from torch.utils.data import Dataset
-import random
 from scipy.signal import butter, filtfilt, resample
+from typing import Tuple
 
 class WaveformDataset(Dataset):
     def __init__(self, csv_file, h5_file, transform=True):
@@ -15,7 +15,7 @@ class WaveformDataset(Dataset):
     def __len__(self):
         return len(self.df)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> Tuple[torch.tensor, torch.tensor, np.array]:
     # Open the HDF5 file in read mode for each item
         with h5py.File(self.h5_file, 'r') as dtfl:
             evi = self.df['trace_name'].iloc[idx]
@@ -26,7 +26,7 @@ class WaveformDataset(Dataset):
                 PWave = self.butterworthFilter(PWave)
                 PWave = self.zeroOneScaling(PWave)
 
-            wave_tensor = torch.from_numpy(PWave.copy()).reshape(1,-1)  # Shape becomes (1, 6000)
+            wave_tensor = torch.from_numpy(PWave.copy()).reshape(1,-1).to(torch.float32)  # Shape becomes (1, 6000)
 
             snr = np.array(dataset.attrs['snr_db'])
             labels = torch.tensor([
@@ -35,13 +35,14 @@ class WaveformDataset(Dataset):
                 #dataset.attrs['coda_end_sample'][0][0]
             ], dtype=int)
             torch.round_(labels)
-            labels = labels.to(torch.int64)
+            labels = labels.to(torch.int32)
 
             labels, wave_tensor = self.shiftSeries(labels, wave_tensor, cutting_length=100)
 
         return wave_tensor, labels, snr
     
-    def shiftSeries(self, labels, wave_tensor, cutting_length = 100):
+    def shiftSeries(self, labels: torch.tensor, wave_tensor: torch.tensor, cutting_length : int = 100)\
+        -> Tuple[torch.tensor, torch.tensor]:
         new_length = len(wave_tensor[0,:]) - cutting_length
 
         if ((labels[0] > 100) and (labels[1] < new_length)):
@@ -63,10 +64,11 @@ class WaveformDataset(Dataset):
 
         return labels, wave_tensor
 
-    def zeroOneScaling(self, data):
+    def zeroOneScaling(self, data: np.array) -> np.array:
         return (data - data.min()) / (data.max() - data.min())
     
-    def butterworthFilter(self, data, lowcut=1, highcut=17, fs=100):
+    def butterworthFilter(self, data: np.array, lowcut: int = 1, highcut: int = 17, fs: int =100)\
+        -> np.array:
         """        
         :param data: Input signal (numpy array).
         :param lowcut: Low frequency cutoff for the Butterworth filter.
