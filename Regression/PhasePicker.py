@@ -63,6 +63,7 @@ class PickerNet(torch.nn.Module):
                                     kernel_size=filter3, padding=filter3//2,bn_num_features=32)
         self.convBlock4 = ConvBlock(in_channels=32, out_channels=32,\
                                     kernel_size=filter4, padding=filter4//2,bn_num_features=32)
+        self.flatten = Flatten()
         self.fcBlock1 = LinearBlock(in_features=flattened, out_features=linear1)
         self.fcBlock2 = LinearBlock(in_features=linear1, out_features=linear2)
         self.regression = Linear(in_features=linear2, out_features=linearOut)
@@ -72,6 +73,7 @@ class PickerNet(torch.nn.Module):
         x = self.convBlock2(x)
         x = self.convBlock3(x)
         x = self.convBlock4(x)
+        x = self.flatten(x)
         x = self.fcBlock1(x)
         x = self.fcBlock2(x)
         return self.regression(x)

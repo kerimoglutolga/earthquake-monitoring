@@ -20,13 +20,13 @@ class WaveformDataset(Dataset):
         with h5py.File(self.h5_file, 'r') as dtfl:
             evi = self.df['trace_name'].iloc[idx]
             dataset = dtfl.get('data/' + str(evi))
-            PWave = np.array(dataset, dtype=np.float32)[:,2]
+            wave = np.array(dataset, dtype=np.float32)[:,2]
 
             if self.transform:
-                PWave = self.butterworthFilter(PWave)
-                PWave = self.zeroOneScaling(PWave)
+                wave = self.butterworthFilter(wave)
+                wave = self.zeroOneScaling(wave)
 
-            wave_tensor = torch.from_numpy(PWave.copy()).reshape(1,-1).to(torch.float32)  # Shape becomes (1, 6000)
+            wave_tensor = torch.from_numpy(wave.copy()).reshape(1,-1).to(torch.float32)  # Shape becomes (1, 6000)
 
             snr = np.array(dataset.attrs['snr_db'])
             labels = torch.tensor([
