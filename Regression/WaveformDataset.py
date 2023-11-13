@@ -85,5 +85,72 @@ class WaveformDataset(Dataset):
         filtered_data = filtfilt(b, a, data)
 
         return filtered_data
+    
+    def normalize(data, axis=(2,)):
+        """Normalize data across specified axes.
+        Expected data shape: (batch, channels, timesteps)"""
+        data -= np.mean(data, axis=axis, keepdims=True)
+        std_data = np.std(data, axis=axis, keepdims=True)
+        std_data[std_data == 0] = 1  # To avoid division by zero
+        data /= std_data
+        return data
+
+    def normalize_long(data, axis=2, window=6000):
+        """
+        Normalize data using a sliding window approach.
+        Expected data shape: (batch, channels, timesteps)
+        """
+        batch, channels, timesteps = data.shape
+        if window is None or window > timesteps:
+            window = timesteps
+        shift = window // 2
+
+        dtype = data.dtype
+        std = np.zeros((batch, channels, timesteps))
+        mean = np.zeros((batch, channels, timesteps))
+
+        # Apply window-based normalization for each batch and channel
+        for b in range(batch):
+            for c in range(channels):
+                data_pad = np.pad(data[b, c], (window // 2, window // 2), mode="reflect")
+                for t in range(0, timesteps, shift):
+                    w_start, w_end = t, min(t + window, timesteps)
+                    std[b, c, w_start:w_end] = np.std(data_pad[w_start:w_start + window])
+                    mean[b, c, w_start:w_end] = np.mean(data_pad[w_start:w_start + window])
+
+        # Interpolation for smooth transition between windows
+        for b in range(batch):
+            for c in range(channels):
+                t_interp = np.arange(timesteps, dtype="int")
+                std_interp = interp1d(np.arange(timesteps), std[b, c], kind="slinear")(t_interp)
+                mean_interp = interp1d(np.arange(timesteps), mean[b, c], kind="slinear")(t_interp)
+                std_interp[std_interp == 0] = 1.0
+                data[b, c] -= mean_interp
+                data[b, c] /= std_interp
+
+        return data.astype(dtype)
+
+    def random_shift(self, wave_tensor, labels, shift_range=None):
+        """
+        Shift the wave_tensor and adjust the labels accordingly.
+        """
+        timesteps = wave_tensor.shape[1]
+        shift = np.random.randint(shift_range[0], shift_range[1]) if shift_range else 0
+
+        shifted_wave_tensor = torch.roll(wave_tensor, shifts=shift, dims=1)
+        # Ensure that shifted data beyond the original boundaries are zeroed
+        if shift > 0:
+            shifted_wave_tensor[:, :shift] = 0
+        elif shift < 0:
+            shifted_wave_tensor[:, shift:] = 0
+
+        # Adjust labels
+        adjusted_labels = labels.clone().detach()
+        adjusted_labels += shift
+        # Ensure labels are within valid range
+        adjusted_labels = torch.clamp(adjusted_labels, 0, timesteps - 1)
+
+        return shifted_wave_tensor, adjusted_labels
+
 
 
