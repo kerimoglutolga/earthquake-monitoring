@@ -5,25 +5,22 @@ from torch.nn import ReLU
 from torch.nn import Flatten
 from torch.nn import BatchNorm1d
 from torch.nn import Sequential
-from math import floor
+from torch.nn import Dropout
 import torch
 
 
 class ConvBlock(torch.nn.Module):
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int,\
         padding: int, bn_num_features: int, eps: float = 1e-5, momentum: float = 0.1,\
-        mp_kernel_size: int = 10, stride: int = 3) -> None:
-
-        self.out_channels = out_channels
-        self.padding = padding
-        self.stride = stride
-
+        mp_kernel_size: int = 10, stride: int = 3, dropout_rate:float = 0.2) -> None:
         super().__init__()
+
         self.convSequential = Sequential(
             Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, padding=padding),
             ReLU(),
             BatchNorm1d(num_features=bn_num_features, eps=eps, momentum=momentum),
-            MaxPool1d(kernel_size=mp_kernel_size, stride=stride)
+            MaxPool1d(kernel_size=mp_kernel_size, stride=stride),
+            Dropout(dropout_rate)
         )
     
     def forward(self, x):
@@ -31,12 +28,15 @@ class ConvBlock(torch.nn.Module):
 
 
 class LinearBlock(torch.nn.Module):
-    def __init__(self, in_features: int, out_features: int, eps: float = 1e-5, momentum : float = 0.1):
+    def __init__(self, in_features: int, out_features: int, eps: float = 1e-5, momentum : float = 0.1,\
+        dropout_rate : float = 0.2):
         super().__init__()
+
         self.linearSequential = Sequential(
             Linear(in_features=in_features, out_features=out_features),
             ReLU(),
-            BatchNorm1d(num_features=out_features, eps=eps, momentum=momentum)
+            BatchNorm1d(num_features=out_features, eps=eps, momentum=momentum),
+            Dropout(dropout_rate)
         )
     def forward(self, x):
         return self.linearSequential(x)

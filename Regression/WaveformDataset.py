@@ -23,7 +23,7 @@ class WaveformDataset(Dataset):
             wave = np.array(dataset, dtype=np.float32)[:,2]
 
             if self.transform:
-                #wave = self.butterworthFilter(wave)
+                wave = self.butterworthFilter(wave)
                 wave = self.zeroOneScaling(wave)
 
             wave_tensor = torch.from_numpy(wave.copy()).reshape(1,-1).to(torch.float32)  # Shape becomes (1, 6000)
