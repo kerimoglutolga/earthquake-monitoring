@@ -1,0 +1,16 @@
+artifact_uri: mlflow-artifacts:/193320523963403291/cf6ef7db8ecc444d8cf787bbd11512e2/artifacts
+deleted_time: 1699980841283
+end_time: 1699980821824
+entry_point_name: ''
+experiment_id: '193320523963403291'
+lifecycle_stage: deleted
+run_id: cf6ef7db8ecc444d8cf787bbd11512e2
+run_name: whimsical-shrew-525
+run_uuid: cf6ef7db8ecc444d8cf787bbd11512e2
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1699980620753
+status: 3
+tags: []
+user_id: tolga

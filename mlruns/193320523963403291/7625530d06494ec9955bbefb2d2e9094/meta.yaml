@@ -1,0 +1,16 @@
+artifact_uri: mlflow-artifacts:/193320523963403291/7625530d06494ec9955bbefb2d2e9094/artifacts
+deleted_time: 1699980841286
+end_time: 1699980287461
+entry_point_name: ''
+experiment_id: '193320523963403291'
+lifecycle_stage: deleted
+run_id: 7625530d06494ec9955bbefb2d2e9094
+run_name: trusting-gnu-157
+run_uuid: 7625530d06494ec9955bbefb2d2e9094
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1699980286718
+status: 4
+tags: []
+user_id: tolga
