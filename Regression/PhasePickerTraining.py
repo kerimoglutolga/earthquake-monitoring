@@ -41,10 +41,10 @@ class Picker:
     def getLoaders(self):
         return self.train_loader, self.test_loader, self.valid_loader
 
-    def trainModel(self, num_epochs: int, lr:float=0.01):
+    def trainModel(self, num_epochs: int, lr:float=0.01, weight_decay:float=1e-5):
 
         loss_fn = nn.MSELoss()
-        optimizer = Adam(self.model.parameters(), lr=lr)
+        optimizer = Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
 
         avg_losses_train = [inf]
         avg_losses_test = [inf]
