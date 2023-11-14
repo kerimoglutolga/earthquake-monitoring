@@ -8,7 +8,7 @@ from math import inf
 from tqdm import tqdm
 
 class Picker:
-    def __init__(self, csv_files: list, h5_files: list, model: torch.nn.Module) -> None:
+    def __init__(self, csv_files: list, h5_files: list, model: torch.nn.Module, seed:int=42) -> None:
         self.csv_files = csv_files
         self.h5_files = h5_files
         self.model = model
@@ -16,8 +16,12 @@ class Picker:
         # Check for CUDA availability
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
+
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed) 
     
-    def createDataLoaders(self, frac_train: float, frac_test: float, batch_size:int = 64)\
+    def createDataLoaders(self, frac_train: float, frac_test: float, batch_size:int = 512)\
         -> Tuple[DataLoader, DataLoader, DataLoader]:
 
         datasets = [WaveformDataset(csv_file=self.csv_files[i], h5_file=self.h5_files[i]) for i in range(len(self.csv_files))]
@@ -30,9 +34,9 @@ class Picker:
         train_dataset, valid_dataset, test_dataset = random_split(concatenated_dataset, [train_size, valid_size, test_size])
 
         # Create separate DataLoaders
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=15)
-        valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=15)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=15)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+        valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
         self.train_loader = train_loader
         self.valid_loader = valid_loader

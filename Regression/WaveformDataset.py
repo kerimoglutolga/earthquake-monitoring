@@ -31,9 +31,9 @@ class WaveformDataset(Dataset):
             snr = np.array(dataset.attrs['snr_db'])
             labels = torch.tensor([
                 dataset.attrs['p_arrival_sample'],
-                dataset.attrs['s_arrival_sample'],
+                dataset.attrs['s_arrival_sample']
                 #dataset.attrs['coda_end_sample'][0][0]
-            ], dtype=int)
+            ])
             torch.round_(labels)
             labels = labels.to(torch.int32)
 
