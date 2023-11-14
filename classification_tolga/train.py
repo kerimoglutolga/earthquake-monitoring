@@ -54,6 +54,8 @@ def train_phasenet(data_dir : str = ".\\data\\STEAD",
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=True)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
     model = PhaseNetL(lr=lr).to(device)
     
     trainer = pl.Trainer(max_epochs=epochs,)
