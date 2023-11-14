@@ -7,10 +7,11 @@ from scipy.signal import butter, filtfilt, resample
 from typing import Tuple
 
 class NoiseDataset(Dataset):
-    def __init__(self, csv_file, h5_file, transform=True):
+    def __init__(self, csv_file, h5_file, transform=True, cutting_length = 100):
         self.df = pd.read_csv(csv_file, usecols=['trace_name', 'p_arrival_sample', 's_arrival_sample'])
         self.h5_file = h5_file
         self.transform = transform
+        self.cutting_length = cutting_length
 
     def __len__(self):
         return len(self.df)
@@ -26,12 +27,13 @@ class NoiseDataset(Dataset):
             if self.transform:
                 ZWave = self.butterworthFilter(ZWave)
                 ZWave = self.zeroOneScaling(ZWave)
-
-            wave_tensor = torch.from_numpy(ZWave.copy()).reshape(1,-1).to(torch.float32)  # Shape becomes (1, 6000)
+                #ZWave = self.normalize(ZWave)
+                
+            wave_tensor = torch.from_numpy(ZWave).reshape(1,-1).to(torch.float32)  # Shape becomes (1, 6000)
 
             labels = torch.stack((torch.zeros(6000), torch.zeros(6000), torch.ones(6000))) # all noise
         
-            wave_tensor, labels = self.shiftSeries(wave_tensor, labels, cutting_length=100)
+            wave_tensor, labels = self.shiftSeries(wave_tensor, labels, cutting_length=self.cutting_length)
 
         return wave_tensor, labels
     
@@ -48,7 +50,7 @@ class NoiseDataset(Dataset):
         return wave_tensor, labels
 
     def zeroOneScaling(self, data: np.array) -> np.array:
-        return (data - data.min()) / (data.max() - data.min())
+        return (data - data.min()) / (data.max() - data.min() + 1e-8)
     
     def butterworthFilter(self, data: np.array, lowcut: int = 1, highcut: int = 17, fs: int =100)\
         -> np.array:
@@ -68,5 +70,14 @@ class NoiseDataset(Dataset):
         filtered_data = filtfilt(b, a, data)
 
         return filtered_data
+    
+    def normalize(data, axis=(1,)):
+        """Normalize data across specified axes.
+        Expected data shape: (batch, channels, timesteps)"""
+        data -= np.mean(data, axis=axis, keepdims=True)
+        std_data = np.std(data, axis=axis, keepdims=True)
+        std_data[std_data == 0] = 1  # To avoid division by zero
+        data /= std_data
+        return data
 
 

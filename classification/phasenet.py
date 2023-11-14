@@ -111,15 +111,17 @@ class PhaseNet(nn.Module):
 
                 x = self.activation(bn2(conv_down(x)))
 
+        
         for i, ((conv_up, bn1, conv_same, bn2), skip) in enumerate(
             zip(self.up_branch, skips[::-1])
         ):
+
             x = self.activation(bn1(conv_up(x)))
             x = x[:, :, 1:-2]
-
             x = self._merge_skip(skip, x)
+            
             x = self.activation(bn2(conv_same(x)))
-
+            
         x = self.out(x)
         if logits:
             return x
