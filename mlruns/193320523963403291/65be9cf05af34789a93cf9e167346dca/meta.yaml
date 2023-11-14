@@ -1,0 +1,16 @@
+artifact_uri: mlflow-artifacts:/193320523963403291/65be9cf05af34789a93cf9e167346dca/artifacts
+deleted_time: 1699980841286
+end_time: 1699980605739
+entry_point_name: ''
+experiment_id: '193320523963403291'
+lifecycle_stage: deleted
+run_id: 65be9cf05af34789a93cf9e167346dca
+run_name: upset-panda-571
+run_uuid: 65be9cf05af34789a93cf9e167346dca
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1699980330897
+status: 4
+tags: []
+user_id: tolga
