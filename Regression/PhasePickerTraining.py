@@ -14,17 +14,24 @@ class Picker:
         self.model = model
 
         # Check for CUDA availability
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # print("Device:", self.device)
+        # self.model.to(self.device)
+
+        self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+        print("Device:", self.device)
         self.model.to(self.device)
 
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed) 
     
-    def createDataLoaders(self, frac_train: float, frac_test: float, batch_size:int = 512)\
+    def createDataLoaders(self, frac_train: float, frac_test: float, batch_size:int = 512,\
+         num_workers:int=1, return_snr: bool = True)\
         -> Tuple[DataLoader, DataLoader, DataLoader]:
 
-        datasets = [WaveformDataset(csv_file=self.csv_files[i], h5_file=self.h5_files[i]) for i in range(len(self.csv_files))]
+        datasets = [WaveformDataset(csv_file=self.csv_files[i], h5_file=self.h5_files[i], return_snr=return_snr)\
+             for i in range(len(self.csv_files))]
         concatenated_dataset = ConcatDataset(datasets)
         
         train_size = int(frac_train * len(concatenated_dataset))
@@ -34,9 +41,9 @@ class Picker:
         train_dataset, valid_dataset, test_dataset = random_split(concatenated_dataset, [train_size, valid_size, test_size])
 
         # Create separate DataLoaders
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-        valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+        valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
         self.train_loader = train_loader
         self.valid_loader = valid_loader
@@ -45,7 +52,7 @@ class Picker:
     def getLoaders(self):
         return self.train_loader, self.test_loader, self.valid_loader
 
-    def trainModel(self, num_epochs: int, lr:float=0.01, weight_decay:float=1e-5):
+    def trainModel(self, num_epochs: int, lr:float=0.01, weight_decay:float=0):
 
         loss_fn = nn.MSELoss()
         optimizer = Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -54,42 +61,56 @@ class Picker:
         avg_losses_test = [inf]
         running_train = []
 
+        print("starting the training process...")
+
         for epoch in range(num_epochs):
+
+            print(f"starting epoch: {epoch}...")
             
             self.model.train()
 
-            avg_loss_train = 0
-            running_av = 0
+            running_av_train = 0
             for i, (waves, labels, _) in enumerate(self.train_loader):
+                #print(i)
                 waves, labels = waves.to(self.device), labels.to(self.device)
+                #print(f"moved to GPU: {i}...")
                 outputs = self.model(waves.reshape(waves.size(0),1,-1))
                 loss = loss_fn(outputs, labels.to(torch.float32))
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                avg_loss_train += loss.item()/len(self.train_loader)
-                running_av = (running_av * i + loss.item())/(i+1)
-                if i%100==0:
-                    running_train.append(running_av)
+                running_av_train = (running_av_train * i + loss.item())/(i+1)
 
-            avg_losses_train.append(avg_loss_train)
+                if i%100==0:
+                    print(f"epoch: {epoch}, iteration {i/len(self.train_loader)}, loss: {running_av_train}")
+                    running_train.append(running_av_train)
+            
+            print(f"Average Training loss after epoch {epoch}: {running_av_train}")
+            
+            avg_losses_train.append(running_av_train)
             
             self.model.eval()
             
-            avg_loss_test = 0
+            running_av_test = 0
+            
+            print("Starting evaluation on test data...")
 
             for i, (waves, labels, _) in enumerate(self.test_loader):
                 waves, labels = waves.to(self.device), labels.to(self.device)
                 outputs = self.model(waves.reshape(waves.size(0),1,-1))
                 loss = loss_fn(outputs, labels.to(torch.float32))
-                avg_loss_test += loss.item()/len(self.test_loader)
-
-            if (avg_loss_test < min(avg_losses_test)):
-                torch.save(self.model.state_dict(), 'BestModel.pth')
+                running_av_test = (running_av_test * i + loss.item())/(i+1)
+                if i%100==0:
+                    print(f"epoch: {epoch}, iteration {i/len(self.test_loader)}, loss: {running_av_test}")
             
-            avg_losses_test.append(avg_loss_test)
+            if (running_av_test < min(avg_losses_test)):
+                    torch.save(self.model.state_dict(), '3Epochs_noBW.pth')
+            
+            print(f"Average test loss after epoch {epoch}: {running_av_test}")
+            
+            avg_losses_test.append(running_av_test)
         
-        return avg_losses_test, avg_loss_train, running_train
+        return avg_losses_test, avg_losses_train, running_train
 
 
 

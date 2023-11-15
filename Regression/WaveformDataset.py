@@ -7,10 +7,11 @@ from scipy.signal import butter, filtfilt, resample
 from typing import Tuple
 
 class WaveformDataset(Dataset):
-    def __init__(self, csv_file, h5_file, transform=True):
+    def __init__(self, csv_file, h5_file, transform=True, return_snr: bool = 1):
         self.df = pd.read_csv(csv_file, low_memory=False)
         self.h5_file = h5_file
         self.transform = transform
+        self.return_snr = return_snr
 
     def __len__(self):
         return len(self.df)
@@ -23,7 +24,7 @@ class WaveformDataset(Dataset):
             wave = np.array(dataset, dtype=np.float32)[:,2]
 
             if self.transform:
-                wave = self.butterworthFilter(wave)
+                #wave = self.butterworthFilter(wave)
                 wave = self.zeroOneScaling(wave)
 
             wave_tensor = torch.from_numpy(wave.copy()).reshape(1,-1).to(torch.float32)  # Shape becomes (1, 6000)
@@ -35,11 +36,13 @@ class WaveformDataset(Dataset):
                 #dataset.attrs['coda_end_sample'][0][0]
             ])
             torch.round_(labels)
-            labels = labels.to(torch.int32)
+            labels = labels.to(torch.float32)
 
             labels, wave_tensor = self.shiftSeries(labels, wave_tensor, cutting_length=100)
+            wave_tensor.unsqueeze_(0)
 
-        return wave_tensor, labels, snr
+        if self.return_snr: return wave_tensor, labels, snr
+        else: return wave_tensor, labels
     
     def shiftSeries(self, labels: torch.tensor, wave_tensor: torch.tensor, cutting_length : int = 100)\
         -> Tuple[torch.tensor, torch.tensor]:
