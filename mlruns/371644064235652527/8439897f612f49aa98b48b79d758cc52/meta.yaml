@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/371644064235652527/8439897f612f49aa98b48b79d758cc52/artifacts
+end_time: 1700058514114
+entry_point_name: ''
+experiment_id: '371644064235652527'
+lifecycle_stage: active
+run_id: 8439897f612f49aa98b48b79d758cc52
+run_name: intelligent-ox-432
+run_uuid: 8439897f612f49aa98b48b79d758cc52
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1700053647596
+status: 4
+tags: []
+user_id: rob

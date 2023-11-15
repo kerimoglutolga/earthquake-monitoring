@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/371644064235652527/f8f8627859c24ae88f541a1a80f2ec80/artifacts
+end_time: 1700067341777
+entry_point_name: ''
+experiment_id: '371644064235652527'
+lifecycle_stage: active
+run_id: f8f8627859c24ae88f541a1a80f2ec80
+run_name: able-hawk-172
+run_uuid: f8f8627859c24ae88f541a1a80f2ec80
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1700058969255
+status: 3
+tags: []
+user_id: rob
