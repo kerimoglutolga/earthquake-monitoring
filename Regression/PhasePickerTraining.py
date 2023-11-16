@@ -27,11 +27,11 @@ class Picker:
         torch.cuda.manual_seed_all(seed) 
     
     def createDataLoaders(self, frac_train: float, frac_test: float, batch_size:int = 512,\
-         num_workers:int=1, return_snr: bool = True)\
+         num_workers:int=1, return_snr: bool = True, input_length: int = 5900)\
         -> Tuple[DataLoader, DataLoader, DataLoader]:
 
-        datasets = [WaveformDataset(csv_file=self.csv_files[i], h5_file=self.h5_files[i], return_snr=return_snr)\
-             for i in range(len(self.csv_files))]
+        datasets = [WaveformDataset(csv_file=self.csv_files[i], h5_file=self.h5_files[i], return_snr=return_snr,\
+            input_length=input_length) for i in range(len(self.csv_files))]
         concatenated_dataset = ConcatDataset(datasets)
         
         train_size = int(frac_train * len(concatenated_dataset))
@@ -52,7 +52,7 @@ class Picker:
     def getLoaders(self):
         return self.train_loader, self.test_loader, self.valid_loader
 
-    def trainModel(self, num_epochs: int, lr:float=0.01, weight_decay:float=0):
+    def trainModel(self, num_epochs: int, lr:float=0.01, weight_decay:float=1e-6):
 
         loss_fn = nn.MSELoss()
         optimizer = Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -74,7 +74,7 @@ class Picker:
                 #print(i)
                 waves, labels = waves.to(self.device), labels.to(self.device)
                 #print(f"moved to GPU: {i}...")
-                outputs = self.model(waves.reshape(waves.size(0),1,-1))
+                outputs = self.model(waves[:,:,:5864])
                 loss = loss_fn(outputs, labels.to(torch.float32))
                 optimizer.zero_grad()
                 loss.backward()
@@ -97,20 +97,18 @@ class Picker:
 
             for i, (waves, labels, _) in enumerate(self.test_loader):
                 waves, labels = waves.to(self.device), labels.to(self.device)
-                outputs = self.model(waves.reshape(waves.size(0),1,-1))
+                outputs = self.model(waves[:,:,:5864])
                 loss = loss_fn(outputs, labels.to(torch.float32))
                 running_av_test = (running_av_test * i + loss.item())/(i+1)
                 if i%100==0:
                     print(f"epoch: {epoch}, iteration {i/len(self.test_loader)}, loss: {running_av_test}")
             
             if (running_av_test < min(avg_losses_test)):
-                    torch.save(self.model.state_dict(), '3Epochs_noBW.pth')
+                    torch.save(self.model.state_dict(), 'PhaseNetRegressor.pth')
             
             print(f"Average test loss after epoch {epoch}: {running_av_test}")
             
             avg_losses_test.append(running_av_test)
         
         return avg_losses_test, avg_losses_train, running_train
-
-
 

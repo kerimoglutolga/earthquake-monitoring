@@ -7,11 +7,12 @@ from scipy.signal import butter, filtfilt, resample
 from typing import Tuple
 
 class WaveformDataset(Dataset):
-    def __init__(self, csv_file, h5_file, transform=True, return_snr: bool = 1):
+    def __init__(self, csv_file, h5_file, transform=True, return_snr: bool = 1, input_length: int = 5900):
         self.df = pd.read_csv(csv_file, low_memory=False)
         self.h5_file = h5_file
         self.transform = transform
         self.return_snr = return_snr
+        self.input_length = input_length
 
     def __len__(self):
         return len(self.df)
@@ -40,6 +41,7 @@ class WaveformDataset(Dataset):
 
             labels, wave_tensor = self.shiftSeries(labels, wave_tensor, cutting_length=100)
             wave_tensor.unsqueeze_(0)
+            wave_tensor = wave_tensor[:,:self.input_length]
 
         if self.return_snr: return wave_tensor, labels, snr
         else: return wave_tensor, labels
