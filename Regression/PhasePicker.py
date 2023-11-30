@@ -65,7 +65,7 @@ class PickerNet(torch.nn.Module):
                                     kernel_size=filter4, padding=filter4//2,bn_num_features=32)
         self.flatten = Flatten()
         self.fcBlock1 = LinearBlock(in_features=flattened, out_features=linear1)
-        self.fcBlock2 = LinearBlock(in_features=linear1, out_features=linear2)
+        self.fcBlock2 = LinearBlock(in_features=linear1, out_features=linear2, dropout_rate=0)
         self.regression = Linear(in_features=linear2, out_features=linearOut)
 
     def forward(self, x):

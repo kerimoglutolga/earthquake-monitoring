@@ -8,3 +8,6 @@ scp -r regression kbirgi@euler.ethz.ch:/cluster/scratch/kbirgi/noah
 # TO LOGIN
 # ssh kbirgi@euler.ethz.ch
 # then enter password
+
+# ZIP
+

@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/371644064235652527/e8f69eaa446f4e82b12e5825489bec5a/artifacts
+end_time: 1700058964183
+entry_point_name: ''
+experiment_id: '371644064235652527'
+lifecycle_stage: active
+run_id: e8f69eaa446f4e82b12e5825489bec5a
+run_name: bemused-ant-476
+run_uuid: e8f69eaa446f4e82b12e5825489bec5a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1700058791977
+status: 4
+tags: []
+user_id: rob
