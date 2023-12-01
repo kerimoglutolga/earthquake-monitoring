@@ -40,12 +40,15 @@ class BedrettoDataset(Dataset):
             data = dtfl.get('data/bucket' + str(bucket_id))
             
             wave = np.array(data, dtype=np.float32)[idx]
+            
             p_arrival = int(attrs['trace_p_arrival_sample'])
             s_arrival = int(attrs['trace_s_arrival_sample'])
 
             if self.transform:
+                wave = self.butterworthFilter(wave)
                 wave = self.zeroOneScaling(wave)
             
+            wave += np.random.normal(0, 0.02, wave.shape)
             wave_tensor = torch.from_numpy(wave).to(torch.float32)
             wave_tensor, p_arrival, s_arrival = self.random_cut(wave_tensor, p_arrival, s_arrival)
             
