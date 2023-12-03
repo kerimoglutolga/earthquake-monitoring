@@ -25,7 +25,7 @@ class WaveformDataset(Dataset):
             wave = np.array(dataset, dtype=np.float32)[:,2]
 
             if self.transform:
-                #wave = self.butterworthFilter(wave)
+                wave = self.butterworthFilter(wave)
                 wave = self.zeroOneScaling(wave)
 
             wave_tensor = torch.from_numpy(wave.copy()).reshape(1,-1).to(torch.float32)  # Shape becomes (1, 6000)
@@ -43,8 +43,7 @@ class WaveformDataset(Dataset):
             wave_tensor.unsqueeze_(0)
             wave_tensor = wave_tensor[:,:self.input_length]
 
-        if self.return_snr: return wave_tensor, labels, snr
-        else: return wave_tensor, labels
+        return wave_tensor[:,:5864], labels
     
     def shiftSeries(self, labels: torch.tensor, wave_tensor: torch.tensor, cutting_length : int = 100)\
         -> Tuple[torch.tensor, torch.tensor]:

@@ -44,7 +44,7 @@ class PhaseNetPicker(nn.Module):
             self.in_channels, self.filters_root, self.kernel_size, padding="same"
         )
         self.in_bn = nn.BatchNorm1d(8, eps=1e-3)
-
+        self.dropout = torch.nn.Dropout(p=0.2, inplace=False)
         self.down_branch = nn.ModuleList()
         self.up_branch = nn.ModuleList()
 
@@ -99,7 +99,7 @@ class PhaseNetPicker(nn.Module):
 
         skips = []
         for i, (conv_same, bn1, conv_down, bn2) in enumerate(self.down_branch):
-            x = self.activation(bn1(conv_same(x)))
+            x = self.dropout(self.activation(bn1(conv_same(x))))
 
             if conv_down is not None:
                 skips.append(x)
