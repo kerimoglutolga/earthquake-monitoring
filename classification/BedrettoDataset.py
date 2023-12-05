@@ -41,14 +41,17 @@ class BedrettoDataset(Dataset):
             
             wave = np.array(data, dtype=np.float32)[idx]
             
-            p_arrival = int(attrs['trace_p_arrival_sample'])
-            s_arrival = int(attrs['trace_s_arrival_sample'])
+            if np.isnan(attrs['trace_p_arrival_sample']): p_arrival = -1
+            else: p_arrival = int(attrs['trace_p_arrival_sample'])
+            if np.isnan(attrs['trace_s_arrival_sample']): s_arrival = -1
+            else: s_arrival = int(attrs['trace_s_arrival_sample'])
+            
 
             if self.transform:
                 wave = self.butterworthFilter(wave)
                 wave = self.zeroOneScaling(wave)
             
-            wave += np.random.normal(0, 0.02, wave.shape)
+            #wave += np.random.normal(0, 0.02, wave.shape)
             wave_tensor = torch.from_numpy(wave).to(torch.float32)
             wave_tensor, p_arrival, s_arrival = self.random_cut(wave_tensor, p_arrival, s_arrival)
             
@@ -72,22 +75,34 @@ class BedrettoDataset(Dataset):
         slack = 500  # Define the slack
 
         # Ensure the cut tensor will contain both P and S arrivals with the defined slack
-        start = torch.randint(s_arrival + slack - self.width + 1, p_arrival - slack + 1, (1,))
-
+        #if p_arrival == -1: start = torch.randint(s_arrival + slack - self.width + 1, s_arrival - slack + 1, (1,))
+        #elif s_arrival == -1: start = torch.randint(p_arrival + slack - self.width + 1, p_arrival - slack + 1, (1,))
+        #else: start = torch.randint(s_arrival + slack - self.width + 1, p_arrival - slack + 1, (1,))
+        start = torch.randint(slack, wave_tensor.shape[1] - self.width - slack, (1,))
+        
         # Perform a cut on the tensor with the defined width
         cut_tensor = wave_tensor[0][start : start + self.width]
 
         # Update the P and S arrivals according to the new cut tensor
+        #if p_arrival != -1: p_arrival -= start.item()
+        #if s_arrival != -1: s_arrival -= start.item()
         p_arrival -= start.item()
         s_arrival -= start.item()
+        
+        # Pick isn't in window
+        if not (0 <= p_arrival and p_arrival <= self.width): p_arrival = -1
+        if not (0 <= s_arrival and s_arrival <= self.width): s_arrival = -1
 
         return cut_tensor.unsqueeze(0), p_arrival, s_arrival
     
     def getLabels(self, p_arrival: int, s_arrival: int, sigma: int = 50):
         """ Triangle shaped label """
       
-        p = self.triangle_pick(p_arrival, sigma)
-        s = self.triangle_pick(s_arrival, sigma)
+        if p_arrival != -1: p = self.triangle_pick(p_arrival, sigma)
+        else: p = torch.zeros(self.width)
+        if s_arrival != -1: s = self.triangle_pick(s_arrival, sigma)
+        else: s = torch.zeros(self.width)
+        
         n = torch.clamp(torch.ones(self.width) - p - s, 0)
         
         return torch.stack((p,s,n))
