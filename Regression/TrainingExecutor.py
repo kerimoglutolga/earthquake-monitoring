@@ -19,8 +19,9 @@ if __name__ == '__main__':
     print("Creating the data loaders...")
     picker.createDataLoaders(frac_train=0.7, frac_test=0.15, batch_size=128, num_workers=10)
     print("Created the data loaders...")
-    path = '/Users/noahliniger/Documents/GitHub/earthquake-monitoring/Regression/Regressor15EpochsBW.pth'
-    avg_losses_test, avg_losses_train, running_losses = picker.trainModel(num_epochs=15, lr=0.001, resume=True, checkpoint_path=path)
+    # path = '/Users/noahliniger/Documents/GitHub/earthquake-monitoring/Regression/Regressor15EpochsBW.pth'
+    # avg_losses_test, avg_losses_train, running_losses = picker.trainModel(num_epochs=30, lr=0.001, resume=True, checkpoint_path=path)
+    avg_losses_test, avg_losses_train, running_losses = picker.trainModel(num_epochs=30, lr=0.001, training_seed = 2, resume=False)
     print(avg_losses_test, avg_losses_train)
     plt.plot(running_losses)
     plt.savefig('runnning_losses.png')

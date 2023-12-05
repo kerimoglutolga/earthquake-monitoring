@@ -23,8 +23,6 @@ class Picker:
         self.model.to(self.device)
 
         torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed) 
     
     def createDataLoaders(self, frac_train: float, frac_test: float, batch_size:int = 512,\
          num_workers:int=1, return_snr: bool = True, input_length: int = 5900)\
@@ -55,7 +53,12 @@ class Picker:
         return self.train_loader, self.test_loader, self.valid_loader
 
 
-    def trainModel(self, num_epochs: int, lr:float=0.01, weight_decay:float=1e-6, resume:bool=False, checkpoint_path:str=None):
+    def trainModel(self, num_epochs: int, lr:float=0.01, weight_decay:float=1e-6, training_seed:int=10, resume:bool=False, checkpoint_path:str=None):
+        current_state = torch.random.get_rng_state()
+
+        # Set a new random seed for training
+        torch.manual_seed(training_seed) 
+
         loss_fn = nn.MSELoss()
         optimizer = Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
 
@@ -119,10 +122,12 @@ class Picker:
                     'avg_losses_test': avg_losses_test,
                     'loss': running_av_test
                 }
-                torch.save(state, 'ContinuedTraining.pth')
+                torch.save(state, f'MultiSwag_seed{training_seed}.pth')
 
             print(f"Average Test Loss after Epoch {epoch}: {running_av_test}")
             avg_losses_test.append(running_av_test)
+        
+        torch.random.set_rng_state(current_state)
 
     # def trainModel(self, num_epochs: int, lr:float=0.01, weight_decay:float=1e-6):
 

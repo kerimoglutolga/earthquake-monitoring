@@ -13,6 +13,7 @@ import torch.utils.data
 import tqdm
 from matplotlib import pyplot as plt
 from PhaseNetPicker import PhaseNetPicker
+import itertools
 
 class InferenceMode(enum.Enum):
     """
@@ -198,7 +199,7 @@ class SWAGInference(object):
         """
 
         self.network.eval()
-        per_model_sample_predictions = []
+        # per_model_sample_predictions = []
 
         # Perform Bayesian model averaging:
         # Instead of sampling self.bma_samples networks (using self.sample_parameters())
@@ -206,34 +207,38 @@ class SWAGInference(object):
         # and perform inference with each network on all samples in loader.
 
         if num_eval_batches == 1:
-
-            for waves, _ in self.test_loader:
+            for waves, labels in self.test_loader:
                 waves = waves.to(self.device)
                 break
 
-        for _ in tqdm.trange(self.bma_samples, desc="Performing Bayesian model averaging"):
+        for i in tqdm.trange(self.bma_samples, desc="Performing Bayesian model averaging"):
             # Sample new parameters for self.network from the SWAG approximate posterior
             self.sample_parameters()
             predictions = []
-            k = 0
-            preds = self.network(waves)
-            predictions.append(preds)
 
             if num_eval_batches != 1:
-                for waves, _ in self.test_loader:
+
+                # Calculate the number of batches to process (half of the total)
+                half_batch_count = len(self.test_loader) // 2
+                # Create an iterator that iterates over the first half of the batches
+                half_test_loader = itertools.islice(self.test_loader, half_batch_count)
+
+                # Now, iterate through half of the test loader
+                for waves, _ in tqdm.tqdm(half_test_loader, desc="Processing batches", leave=False):
                     waves = waves.to(self.device)
                     preds = self.network(waves)
-                    predictions.append(preds)
-                    k += 1
-                    if k >= num_eval_batches:
-                        break
+                    predictions.append(preds.cpu().detach())
+            else:
+                preds = self.network(waves)
+                predictions.append(preds)
 
             predictions = torch.cat(predictions)
-            per_model_sample_predictions.append(predictions)
+            torch.save(predictions, f"/Users/noahliniger/Documents/GitHub/earthquake-monitoring/Regression/SwagPredictions/100Samples_WholeValid_{i}.pt")
+            # per_model_sample_predictions.append(predictions)
 
-        bma_probabilities = torch.stack(per_model_sample_predictions, dim=0).mean(dim=0)
+        # bma_probabilities = torch.stack(per_model_sample_predictions, dim=0).mean(dim=0)
         
-        return bma_probabilities, per_model_sample_predictions
+        #return predictions, #bma_probabilities, per_model_sample_predictions #, waves, labels
 
     def sample_parameters(self) -> None:
         """
