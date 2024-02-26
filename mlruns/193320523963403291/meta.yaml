@@ -1,6 +1,0 @@
-artifact_location: mlflow-artifacts:/193320523963403291
-creation_time: 1699980004275
-experiment_id: '193320523963403291'
-last_update_time: 1699980004275
-lifecycle_stage: active
-name: phasenet-training-from-scratch

@@ -285,7 +285,7 @@ class PhaseNetL(pl.LightningModule):
         self.out = nn.Conv1d(last_filters, self.classes, 1, padding="same")
         self.softmax = torch.nn.Softmax(dim=1)
 
-    def forward(self, x, logits=False):
+    def forward(self, x, logits=True):
         x = x.unsqueeze(1)
         x = self.activation(self.in_bn(self.inc(x)))
 

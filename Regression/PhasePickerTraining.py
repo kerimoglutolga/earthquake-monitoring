@@ -25,7 +25,7 @@ class Picker:
         torch.manual_seed(seed)
     
     def createDataLoaders(self, frac_train: float, frac_test: float, batch_size:int = 512,\
-         num_workers:int=1, return_snr: bool = True, input_length: int = 5900)\
+         num_workers:int=10, return_snr: bool = True, input_length: int = 5900)\
         -> Tuple[DataLoader, DataLoader, DataLoader]:
 
         datasets = [WaveformDataset(csv_file=self.csv_files[i], h5_file=self.h5_files[i], return_snr=return_snr,\

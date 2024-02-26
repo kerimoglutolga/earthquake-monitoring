@@ -85,7 +85,7 @@ class ClassificationEvaluator():
         precision, recall = self.precision_recall(self.preds_maxs_eq[:, 0], self.preds_maxs_noise[:, 0], theta_p)
         f1_p = 2*precision*recall / (precision + recall)
         
-        precision, recall = self.precision_recall(self.preds_maxs_eq[:, 1], self.preds_maxs_noise[:, 0], theta_s)
+        precision, recall = self.precision_recall(self.preds_maxs_eq[:, 1], self.preds_maxs_noise[:, 1], theta_s)
         f1_s = 2*precision*recall / (precision + recall)
         
         return f1_p, f1_s

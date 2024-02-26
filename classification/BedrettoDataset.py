@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 from scipy.signal import butter, filtfilt, resample
 from typing import Tuple
 
+
 class BedrettoDataset(Dataset):
     def __init__(self, csv_file, h5_file, transform=True, tri_width=50, allow_missing_s=False, width = 6000, slack = 500):
         self.metadata = pd.read_csv(csv_file)
@@ -16,17 +17,17 @@ class BedrettoDataset(Dataset):
         self.width = width # Width of wave tensor to be obtained
         self.slack = slack # Slack to be used when cutting the wave tensor
         
-        if self.width > max(self.metadata['trace_p_arrival_sample'] - self.metadata['trace_s_arrival_sample']) + 2 * self.slack:
-            raise ValueError('Width of wave tensor is larger than the distance between P and S arrival')
+        #if self.width > max(self.metadata['trace_p_arrival_sample'] - self.metadata['trace_s_arrival_sample']) + 2 * self.slack:
+        #    raise ValueError('Width of wave tensor is larger than the distance between P and S arrival')
         
         pattern = r'bucket(\d+)\$(0|1)'
         self.metadata[['bucket_id', 'idx']] = self.metadata['trace_name'].str.extract(pattern)
         self.metadata['bucket_id'] = self.metadata['bucket_id'].astype(int)
         self.metadata['idx'] = self.metadata['idx'].astype(int)
         
-        self.metadata = self.metadata[self.metadata['trace_p_arrival_sample'].notna()]
-              
-        if not allow_missing_s:
+        if allow_missing_s: 
+            self.metadata = self.metadata[self.metadata['trace_p_arrival_sample'].notna()]  
+        else: 
             self.metadata = self.metadata[self.metadata['trace_s_arrival_sample'].notna()]            
         
     def __len__(self):
@@ -71,13 +72,18 @@ class BedrettoDataset(Dataset):
     def random_cut(self, wave_tensor: torch.tensor, p_arrival: int, s_arrival: int)-> torch.tensor:
         """ Perform a random cut to cut down the length of the tensor to self.width while also containing the P and S arrival
         and update the P and S arrival accordingly """
+        #if s_arrival == -1 and p_arrival != -1:
+        #    start = p_arrival - 500
+        #    cut_tensor = wave_tensor[0][start : start + self.width]
+        #    p_arrival = 500
+        #    return cut_tensor.unsqueeze(0), p_arrival, s_arrival
         
         slack = 500  # Define the slack
 
         # Ensure the cut tensor will contain both P and S arrivals with the defined slack
         #if p_arrival == -1: start = torch.randint(s_arrival + slack - self.width + 1, s_arrival - slack + 1, (1,))
         #elif s_arrival == -1: start = torch.randint(p_arrival + slack - self.width + 1, p_arrival - slack + 1, (1,))
-        #else: start = torch.randint(s_arrival + slack - self.width + 1, p_arrival - slack + 1, (1,))
+        # else: start = torch.randint(s_arrival + slack - self.width + 1, p_arrival - slack + 1, (1,))
         start = torch.randint(slack, wave_tensor.shape[1] - self.width - slack, (1,))
         
         # Perform a cut on the tensor with the defined width
@@ -90,8 +96,8 @@ class BedrettoDataset(Dataset):
         s_arrival -= start.item()
         
         # Pick isn't in window
-        if not (0 <= p_arrival and p_arrival <= self.width): p_arrival = -1
-        if not (0 <= s_arrival and s_arrival <= self.width): s_arrival = -1
+        #if not (0 <= p_arrival and p_arrival <= self.width): p_arrival = -1
+        #if not (0 <= s_arrival and s_arrival <= self.width): s_arrival = -1
 
         return cut_tensor.unsqueeze(0), p_arrival, s_arrival
     

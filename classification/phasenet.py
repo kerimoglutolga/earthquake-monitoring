@@ -99,7 +99,6 @@ class PhaseNet(nn.Module):
         skips = []
         for i, (conv_same, bn1, conv_down, bn2) in enumerate(self.down_branch):
             x = self.activation(bn1(conv_same(x)))
-
             if conv_down is not None:
                 skips.append(x)
                 if i == 1:
@@ -110,19 +109,17 @@ class PhaseNet(nn.Module):
                     x = F.pad(x, (2, 3), "constant", 0)
 
                 x = self.activation(bn2(conv_down(x)))
-
         
         for i, ((conv_up, bn1, conv_same, bn2), skip) in enumerate(
             zip(self.up_branch, skips[::-1])
         ):
-
             x = self.activation(bn1(conv_up(x)))
             x = x[:, :, 1:-2]
             x = self._merge_skip(skip, x)
-            
             x = self.activation(bn2(conv_same(x)))
             
         x = self.out(x)
+       
         if logits:
             return x
         else:
